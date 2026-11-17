@@ -1,14 +1,26 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 import TopNavBar from "../../components/nav/TopNavBar";
-import LeafletMapCanvas from "../../components/map/LeafletMapCanvas";
 import { CampusNode, CampusEdge, SurfaceType } from "../../types/road";
 import {
   validateCampusTopology,
   TopologyReport,
 } from "../../lib/graph/topologyValidator";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
+
+const LeafletMapCanvas = dynamic(
+  () => import("../../components/map/LeafletMapCanvas"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center w-full h-full font-mono text-xs bg-slate-100 text-slate-400">
+        지도 캔버스 초기화 중...
+      </div>
+    ),
+  }
+);
 
 export default function TeacherPage() {
   const [classCode, setClassCode] = useState<string>("CLASS_2026_A");
@@ -135,12 +147,12 @@ export default function TeacherPage() {
   };
 
   return (
-    <div className="flex h-screen w-screen flex-col bg-slate-50">
+    <div className="flex flex-col w-screen h-screen bg-slate-50">
       <TopNavBar currentPath="/teacher" />
 
       <div className="relative flex flex-1 overflow-hidden">
         {/* 중앙 관제 지도 캔버스 */}
-        <main className="relative h-full flex-1">
+        <main className="relative flex-1 h-full">
           <LeafletMapCanvas
             nodes={nodes}
             edges={edges}
@@ -152,8 +164,8 @@ export default function TeacherPage() {
         </main>
 
         {/* 우측 관제 및 위상 진단 사이드바 */}
-        <aside className="z-10 flex w-96 flex-col border-l border-slate-200 bg-white/95 p-5 shadow-sm backdrop-blur-sm">
-          <div className="border-b border-slate-200 pb-3">
+        <aside className="z-10 flex flex-col p-5 border-l shadow-sm w-96 border-slate-200 bg-white/95 backdrop-blur-sm">
+          <div className="pb-3 border-b border-slate-200">
             <h2 className="text-sm font-bold text-slate-800">
               교사 통합 관제 대시보드
             </h2>
@@ -183,7 +195,7 @@ export default function TeacherPage() {
             </div>
 
             {/* 작도 세션 잠금 제어 */}
-            <div className="rounded border border-slate-200 bg-slate-50 p-3">
+            <div className="p-3 border rounded border-slate-200 bg-slate-50">
               <div className="flex items-center justify-between">
                 <div>
                   <span className="block font-semibold text-slate-700">학생 작도 권한</span>
@@ -205,7 +217,7 @@ export default function TeacherPage() {
             </div>
 
             {/* 위상 진단 보고서 (5차시 수학과 연계) */}
-            <div className="space-y-2 border-t border-slate-200 pt-3">
+            <div className="pt-3 space-y-2 border-t border-slate-200">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-slate-700">그래프 위상 진단 결과</span>
                 <button
@@ -230,14 +242,14 @@ export default function TeacherPage() {
                       : "도로망 결함 검출 (단절 또는 고립 노드 존재)"}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-center text-slate-700 font-mono">
-                    <div className="rounded border border-slate-200 p-2">
+                  <div className="grid grid-cols-2 gap-2 font-mono text-center text-slate-700">
+                    <div className="p-2 border rounded border-slate-200">
                       <span className="block text-[11px] text-slate-400">네트워크 덩어리</span>
                       <span className="text-sm font-bold">
                         {topologyReport.componentCount}개
                       </span>
                     </div>
-                    <div className="rounded border border-slate-200 p-2">
+                    <div className="p-2 border rounded border-slate-200">
                       <span className="block text-[11px] text-slate-400">고립 노드 수</span>
                       <span className="text-sm font-bold text-amber-600">
                         {topologyReport.isolatedNodeIds.length}개
@@ -248,7 +260,7 @@ export default function TeacherPage() {
                   {topologyReport.diagnosticMessages.length > 0 && (
                     <ul className="rounded border border-slate-200 bg-slate-50 p-2.5 space-y-1 text-[11px] text-slate-600 font-mono">
                       {topologyReport.diagnosticMessages.map((msg, idx) => (
-                        <li key={idx}>- {msg}</li>
+                        <li key={idx}>{msg}</li>
                       ))}
                     </ul>
                   )}
@@ -262,10 +274,10 @@ export default function TeacherPage() {
           </div>
 
           {/* 하단 최종 JSON 내보내기 */}
-          <div className="mt-auto border-t border-slate-200 pt-4">
+          <div className="pt-4 mt-auto border-t border-slate-200">
             <button
               onClick={handleExportFinalJson}
-              className="w-full rounded bg-sky-600 py-2 text-xs font-semibold text-white transition hover:bg-sky-700"
+              className="w-full py-2 text-xs font-semibold text-white transition rounded bg-sky-600 hover:bg-sky-700"
             >
               검증 완료 도로망 JSON 최종 추출
             </button>
